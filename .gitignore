@@ -1,2 +1,4 @@
 osla
 obj/
+!*.bak
+!*.~
