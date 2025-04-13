@@ -16,7 +16,7 @@
 
 #define CONFIG_DIR "~/.config/OSLA"
 #define CONFIG_PATH "~/.config/OSLA/osla.conf"
-#define DEFAULT_AUTHOR "Your Name"
+#define DEFAULT_AUTHOR "author"
 #define DEFAULT_YEAR "2025"
 #define DEFAULT_LICENSE "mit"
 
