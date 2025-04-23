@@ -16,16 +16,28 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
-/* Mapping for license aliases */
-typedef struct {
-    const char *alias;
-    const char *full;
-} AliasMapping;
-
-static const AliasMapping alias_map[] = {
+const AliasMapping alias_map[] = {
+//  {"alias", "name"},    
     {"gpl", "gpl-3.0"},
     {"apache", "apache-2.0"},
+    {"agpl", "gnu-agplv-3.0"},
+    {"lgpl", "gnu-lgplv-3.0"},
+    {"mpl", "mpl-2.0"},
+    {"bsd-2", "bsd-2-clause"},
+    {"bsd-3", "bsd-3-clause"},
+    {"mit", "mit"},
+    {"ul", "unlicense"},
+    {"cern-ohl-w", "cern-ohl-w-2.0"},
+    {"cern-ohl-p", "cern-ohl-p-2.0"},
+    {"cern-ohl-s", "cern-ohl-s-2.0"},
+    {"sil-ofl", "sil-ofl-1.1"},
+    {"wtfpl", "wtfpl-2.0"},
+    {"cc0", "cc0-1.0"},
+    {"cc-by-sa", "cc-by-sa-4.0"},
+    {"cc-by", "cc-by-4.0"},
+    {"boost", "boost"},
     {NULL, NULL}
 };
 
@@ -67,24 +79,51 @@ char *load_license(const char *license, const char *licenses_dir) {
 }
 
 char *replace_placeholders(const char *content, const char *year, const char *author) {
-    size_t buf_size = strlen(content) + 256;
-    char *result = (char *)malloc(buf_size);
+    typedef struct { const char *token; const char *value; } TokenMap;
+    const TokenMap tokens[] = {
+        { "<YEAR>",              year },
+        { "[yyyy]",              year },
+        { "[year]",              year },
+        { "(c) [year]",          NULL },   // keep "(c)" literal, replace only [year]
+        { "[year]",              year },
+        { "<AUTHOR>",            author },
+        { "[name of copyright owner]", author },
+        { "[fullname]",          author },
+        { "<COPYRIGHT HOLDER>",  author },
+        { "[copyright holder]",  author },
+        { NULL,                  NULL }
+    };
+    // Estimate output size generously
+    size_t buf_size = strlen(content) + 512;
+    char *result = malloc(buf_size);
     if (!result) return NULL;
     result[0] = '\0';
-    
+
     const char *p = content;
     while (*p) {
-        if (strncmp(p, "<YEAR>", 6) == 0) {
-            strncat(result, year, buf_size - strlen(result) - 1);
-            p += 6;
-        } else if (strncmp(p, "<AUTHOR>", 8) == 0) {
-            strncat(result, author, buf_size - strlen(result) - 1);
-            p += 8;
-        } else {
+        bool matched = false;
+        for (int i = 0; tokens[i].token; i++) {
+            size_t tlen = strlen(tokens[i].token);
+            if (strncmp(p, tokens[i].token, tlen) == 0) {
+                if (tokens[i].value) {
+                    strncat(result, tokens[i].value, buf_size - strlen(result) - 1);
+                } else {
+                    // Special case "(c) [year]": output "(c) " then year
+                    if (strcmp(tokens[i].token, "(c) [year]") == 0) {
+                        strncat(result, "(c) ", buf_size - strlen(result) - 1);
+                        strncat(result, year, buf_size - strlen(result) - 1);
+                    }
+                }
+                p += tlen;
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            // Copy one character
             size_t len = strlen(result);
-            result[len] = *p;
+            result[len] = *p++;
             result[len + 1] = '\0';
-            p++;
         }
     }
     return result;

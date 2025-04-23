@@ -10,6 +10,7 @@
 
 #include "io.h"
 #include "utils.h"
+#include "license.h"  // For alias_map
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,14 +66,14 @@ void list_license_files(const char *dir_path) {
                     name_len = sizeof(lic_name) - 1;
                 strncpy(lic_name, entry->d_name, name_len);
                 lic_name[name_len] = '\0';
-                // For simplicity, alias information is hardcoded for known ones
-                if (strcasecmp(lic_name, "gpl-3.0") == 0) {
-                    printf("%-20s %-30s\n", lic_name, "gpl");
-                } else if (strcasecmp(lic_name, "apache-2.0") == 0) {
-                    printf("%-20s %-30s\n", lic_name, "apache");
-                } else {
-                    printf("%-20s %-30s\n", lic_name, "");
+                const char *alias_found = "";
+                for (int i = 0; alias_map[i].alias != NULL; i++) {
+                    if (strcmp(alias_map[i].full, lic_name) == 0){
+                        alias_found = alias_map[i].alias;
+                        break;
+                    }
                 }
+                printf("%-20s %-30s\n", lic_name, alias_found);
             }
         }
     }

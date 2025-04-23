@@ -29,5 +29,12 @@ char *replace_placeholders(const char *content, const char *year, const char *au
  */
 int resolve_alias(const char *input, char *output, size_t out_size);
 
+typedef struct { 
+    const char *alias;
+    const char *full;
+} AliasMapping;
+
+extern const AliasMapping alias_map[];
+
 #endif /* LICENSE_H */
 
